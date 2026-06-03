@@ -175,3 +175,14 @@ The AI agent automatically generates the SQL query, executes it against the live
 - **Full-Stack Development** — FastAPI REST backend + React TypeScript frontend
 - **Database Design** — Relational schema across 12 interconnected entities
 - **REST API Design** — Clean endpoint structure with Pydantic validation
+
+---
+
+## 🚀 Live Demo
+
+🌐 **App:** https://ai-native-erp-frontend.onrender.com  
+📡 **API:** https://ai-native-erp-backend.onrender.com/docs
+
+> ⚡ Backend on Render free tier — allow 30s on first load if inactive.
+
+![AI ERP Dashboard](./screenshots/dashboard.png)
