@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { getCompanies, createCompany } from '../api';
-import { Building2, Plus, Globe, Tag } from 'lucide-react';
+import { Building2, Plus, Globe, Tag, X } from 'lucide-react';
+
+const inputCls = "w-full bg-[#111] border border-white/[0.08] focus:border-blue-500/60 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-700 outline-none transition-all duration-150";
+const labelCls = "block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider";
 
 const Companies = () => {
   const [companies, setCompanies] = useState([]);
@@ -12,13 +15,11 @@ const Companies = () => {
       const response = await getCompanies();
       setCompanies(response.data);
     } catch (error) {
-      console.error("Error fetching companies", error);
+      console.error('Error fetching companies', error);
     }
   };
 
-  useEffect(() => {
-    fetchCompanies();
-  }, []);
+  useEffect(() => { fetchCompanies(); }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +29,7 @@ const Companies = () => {
       setNewCompany({ name: '', industry: '', website: '', description: '' });
       fetchCompanies();
     } catch (error) {
-      console.error("Error creating company", error);
+      console.error('Error creating company', error);
     }
   };
 
@@ -36,37 +37,44 @@ const Companies = () => {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Companies</h1>
-          <p className="text-gray-400">Manage your business accounts</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Companies</h1>
+          <p className="text-gray-600 text-xs mt-1">Manage your business accounts</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          className="bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-all duration-150 shadow-[0_1px_4px_rgba(37,99,235,0.3)]"
         >
-          <Plus size={20} />
+          <Plus size={16} />
           Add Company
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {companies.map((company: any) => (
-          <div key={company.id} className="bg-gray-900 border border-gray-800 p-6 rounded-xl hover:border-blue-500 transition-colors group">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                <Building2 size={24} />
+          <div key={company.id} className="bg-[#0f0f0f] border border-white/[0.07] hover:border-white/[0.14] p-6 rounded-xl transition-all duration-150 group">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-white/[0.04] rounded-lg flex items-center justify-center text-blue-400 group-hover:bg-blue-600/20 transition-colors duration-150">
+                <Building2 size={20} />
               </div>
               <div>
-                <h3 className="text-xl font-bold">{company.name}</h3>
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <Tag size={14} />
+                <h3 className="font-semibold tracking-tight text-white">{company.name}</h3>
+                <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-0.5">
+                  <Tag size={11} />
                   <span>{company.industry}</span>
                 </div>
               </div>
             </div>
-            <p className="text-gray-400 text-sm mb-4 line-clamp-2">{company.description || "No description provided."}</p>
-            <div className="flex items-center gap-2 text-blue-400 text-sm">
-              <Globe size={14} />
-              <a href={company.website.startsWith('http') ? company.website : `https://${company.website}`} target="_blank" rel="noreferrer" className="hover:underline">
+            <p className="text-gray-600 text-xs mb-4 line-clamp-2 leading-relaxed">
+              {company.description || 'No description provided.'}
+            </p>
+            <div className="flex items-center gap-1.5 text-blue-400 text-xs">
+              <Globe size={12} />
+              <a
+                href={company.website?.startsWith('http') ? company.website : `https://${company.website}`}
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-blue-300 transition-colors duration-150"
+              >
                 {company.website}
               </a>
             </div>
@@ -75,58 +83,46 @@ const Companies = () => {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-900 border border-gray-800 p-8 rounded-2xl w-full max-w-md shadow-2xl">
-            <h2 className="text-2xl font-bold mb-6">Add New Company</h2>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="bg-[#0f0f0f] border border-white/[0.09] p-7 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-semibold tracking-tight">Add Company</h2>
+              <button onClick={() => setShowModal(false)} className="text-gray-600 hover:text-gray-300 transition-colors p-1 rounded-lg">
+                <X size={18} />
+              </button>
+            </div>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Company Name</label>
-                <input
-                  type="text"
-                  required
-                  value={newCompany.name}
+                <label className={labelCls}>Company Name</label>
+                <input type="text" required placeholder="Acme Corp" value={newCompany.name}
                   onChange={e => setNewCompany({ ...newCompany, name: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                />
+                  className={inputCls} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Industry</label>
-                <input
-                  type="text"
-                  value={newCompany.industry}
+                <label className={labelCls}>Industry</label>
+                <input type="text" placeholder="Technology" value={newCompany.industry}
                   onChange={e => setNewCompany({ ...newCompany, industry: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                />
+                  className={inputCls} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Website</label>
-                <input
-                  type="text"
-                  value={newCompany.website}
+                <label className={labelCls}>Website</label>
+                <input type="text" placeholder="acmecorp.com" value={newCompany.website}
                   onChange={e => setNewCompany({ ...newCompany, website: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                />
+                  className={inputCls} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Description</label>
-                <textarea
-                  value={newCompany.description}
+                <label className={labelCls}>Description</label>
+                <textarea value={newCompany.description} placeholder="Brief description…"
                   onChange={e => setNewCompany({ ...newCompany, description: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500 h-24"
-                />
+                  className={`${inputCls} h-20 resize-none`} />
               </div>
-              <div className="flex gap-4 mt-8">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors"
-                >
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowModal(false)}
+                  className="flex-1 bg-white/[0.05] hover:bg-white/[0.09] text-gray-300 text-sm py-2.5 rounded-lg transition-all duration-150 font-medium">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors"
-                >
+                <button type="submit"
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm py-2.5 rounded-lg transition-all duration-150 font-medium shadow-[0_1px_4px_rgba(37,99,235,0.3)]">
                   Create
                 </button>
               </div>

@@ -1,18 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { getTransactions, createTransaction, getCompanies } from '../api';
-import { DollarSign, Plus, ArrowUpRight, ArrowDownLeft, Tag, Calendar } from 'lucide-react';
+import { Plus, ArrowUpRight, ArrowDownLeft, Tag, Calendar, X } from 'lucide-react';
 import { clsx } from 'clsx';
+
+const inputCls = "w-full bg-[#111] border border-white/[0.08] focus:border-blue-500/60 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-700 outline-none transition-all duration-150";
+const labelCls = "block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider";
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
-  const [companies, setCompanies] = useState([]);
+  const [companies, setCompanies] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [newTransaction, setNewTransaction] = useState({ 
-    description: '', 
-    amount: 0, 
-    type: 'Income', 
-    category: '', 
-    company_id: '' 
+  const [newTransaction, setNewTransaction] = useState({
+    description: '', amount: 0, type: 'Income', category: '', company_id: ''
   });
 
   const fetchData = async () => {
@@ -24,13 +23,11 @@ const Transactions = () => {
         setNewTransaction(prev => ({ ...prev, company_id: compRes.data[0].id }));
       }
     } catch (error) {
-      console.error("Error fetching data", error);
+      console.error('Error fetching data', error);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +41,7 @@ const Transactions = () => {
       setNewTransaction({ description: '', amount: 0, type: 'Income', category: '', company_id: companies[0]?.id || '' });
       fetchData();
     } catch (error) {
-      console.error("Error creating transaction", error);
+      console.error('Error creating transaction', error);
     }
   };
 
@@ -52,63 +49,63 @@ const Transactions = () => {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Finance</h1>
-          <p className="text-gray-400">Track income and expenses</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Finance</h1>
+          <p className="text-gray-600 text-xs mt-1">Track income and expenses</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          className="bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-all duration-150 shadow-[0_1px_4px_rgba(37,99,235,0.3)]"
         >
-          <Plus size={20} />
+          <Plus size={16} />
           New Transaction
         </button>
       </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div className="bg-[#0f0f0f] border border-white/[0.07] rounded-xl overflow-hidden">
         <table className="w-full text-left">
           <thead>
-            <tr className="border-b border-gray-800 bg-gray-800/50">
-              <th className="px-6 py-4 font-bold text-sm uppercase tracking-wider text-gray-400">Description</th>
-              <th className="px-6 py-4 font-bold text-sm uppercase tracking-wider text-gray-400">Category</th>
-              <th className="px-6 py-4 font-bold text-sm uppercase tracking-wider text-gray-400">Company</th>
-              <th className="px-6 py-4 font-bold text-sm uppercase tracking-wider text-gray-400">Date</th>
-              <th className="px-6 py-4 font-bold text-sm uppercase tracking-wider text-gray-400 text-right">Amount</th>
+            <tr className="border-b border-white/[0.06] bg-white/[0.02]">
+              <th className="px-6 py-3.5 text-[10px] font-semibold text-gray-600 uppercase tracking-widest">Description</th>
+              <th className="px-6 py-3.5 text-[10px] font-semibold text-gray-600 uppercase tracking-widest">Category</th>
+              <th className="px-6 py-3.5 text-[10px] font-semibold text-gray-600 uppercase tracking-widest">Company</th>
+              <th className="px-6 py-3.5 text-[10px] font-semibold text-gray-600 uppercase tracking-widest">Date</th>
+              <th className="px-6 py-3.5 text-[10px] font-semibold text-gray-600 uppercase tracking-widest text-right">Amount</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-800">
-            {transactions.map((transaction: any) => (
-              <tr key={transaction.id} className="hover:bg-gray-800/50 transition-colors">
+          <tbody className="divide-y divide-white/[0.04]">
+            {transactions.map((t: any) => (
+              <tr key={t.id} className="hover:bg-white/[0.02] transition-colors duration-100">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className={clsx(
-                      "w-8 h-8 rounded-full flex items-center justify-center",
-                      transaction.type === 'Income' ? "bg-green-900/30 text-green-400" : "bg-red-900/30 text-red-400"
+                      "w-7 h-7 rounded-full flex items-center justify-center shrink-0",
+                      t.type === 'Income' ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"
                     )}>
-                      {transaction.type === 'Income' ? <ArrowUpRight size={16} /> : <ArrowDownLeft size={16} />}
+                      {t.type === 'Income' ? <ArrowUpRight size={14} /> : <ArrowDownLeft size={14} />}
                     </div>
-                    <span className="font-medium">{transaction.description}</span>
+                    <span className="text-sm text-white font-medium">{t.description}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-gray-400">
-                  <div className="flex items-center gap-2">
-                    <Tag size={14} />
-                    {transaction.category}
+                <td className="px-6 py-4 text-gray-600 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <Tag size={12} />
+                    {t.category}
                   </div>
                 </td>
-                <td className="px-6 py-4 text-gray-400">
-                   {companies.find(c => c.id === transaction.company_id)?.name || "Unknown"}
+                <td className="px-6 py-4 text-gray-600 text-xs">
+                  {companies.find(c => c.id === t.company_id)?.name || '—'}
                 </td>
-                <td className="px-6 py-4 text-gray-400">
-                  <div className="flex items-center gap-2">
-                    <Calendar size={14} />
-                    {new Date(transaction.date).toLocaleDateString()}
+                <td className="px-6 py-4 text-gray-600 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar size={12} />
+                    {new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </div>
                 </td>
                 <td className={clsx(
-                  "px-6 py-4 font-bold text-right",
-                  transaction.type === 'Income' ? "text-green-400" : "text-red-400"
+                  "px-6 py-4 font-semibold text-right text-sm num",
+                  t.type === 'Income' ? "text-emerald-400" : "text-red-400"
                 )}>
-                  {transaction.type === 'Income' ? '+' : '-'}${transaction.amount.toLocaleString()}
+                  {t.type === 'Income' ? '+' : '−'}${t.amount.toLocaleString()}
                 </td>
               </tr>
             ))}
@@ -117,78 +114,61 @@ const Transactions = () => {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-900 border border-gray-800 p-8 rounded-2xl w-full max-w-md shadow-2xl">
-            <h2 className="text-2xl font-bold mb-6">Record Transaction</h2>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="bg-[#0f0f0f] border border-white/[0.09] p-7 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-semibold tracking-tight">Record Transaction</h2>
+              <button onClick={() => setShowModal(false)} className="text-gray-600 hover:text-gray-300 transition-colors p-1 rounded-lg">
+                <X size={18} />
+              </button>
+            </div>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Description</label>
-                <input
-                  type="text"
-                  required
-                  value={newTransaction.description}
+                <label className={labelCls}>Description</label>
+                <input type="text" required placeholder="e.g. SaaS subscription" value={newTransaction.description}
                   onChange={e => setNewTransaction({ ...newTransaction, description: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                />
+                  className={inputCls} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Amount</label>
-                  <input
-                    type="number"
-                    required
-                    value={newTransaction.amount}
+                  <label className={labelCls}>Amount</label>
+                  <input type="number" required placeholder="0.00" value={newTransaction.amount}
                     onChange={e => setNewTransaction({ ...newTransaction, amount: e.target.value as any })}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                  />
+                    className={inputCls} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Type</label>
-                  <select
-                    value={newTransaction.type}
+                  <label className={labelCls}>Type</label>
+                  <select value={newTransaction.type}
                     onChange={e => setNewTransaction({ ...newTransaction, type: e.target.value })}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                  >
+                    className={inputCls}>
                     <option value="Income">Income</option>
                     <option value="Expense">Expense</option>
                   </select>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Category</label>
-                <input
-                  type="text"
-                  required
-                  value={newTransaction.category}
+                <label className={labelCls}>Category</label>
+                <input type="text" required placeholder="e.g. Software" value={newTransaction.category}
                   onChange={e => setNewTransaction({ ...newTransaction, category: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                />
+                  className={inputCls} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Company</label>
-                <select
-                  required
-                  value={newTransaction.company_id}
+                <label className={labelCls}>Company</label>
+                <select required value={newTransaction.company_id}
                   onChange={e => setNewTransaction({ ...newTransaction, company_id: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                >
-                  {companies.map((company: any) => (
-                    <option key={company.id} value={company.id}>{company.name}</option>
+                  className={inputCls}>
+                  {companies.map((c: any) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
               </div>
-              <div className="flex gap-4 mt-8">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors"
-                >
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowModal(false)}
+                  className="flex-1 bg-white/[0.05] hover:bg-white/[0.09] text-gray-300 text-sm py-2.5 rounded-lg transition-all duration-150 font-medium">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors"
-                >
+                <button type="submit"
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm py-2.5 rounded-lg transition-all duration-150 font-medium shadow-[0_1px_4px_rgba(37,99,235,0.3)]">
                   Record
                 </button>
               </div>

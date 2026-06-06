@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { getCampaigns, createCampaign, getLeads, createLead, runLeadQualification } from '../api';
-import { 
-  Megaphone, Plus, Target, UserPlus, 
-  Sparkles, Loader2, Mail, ExternalLink,
+import {
+  Megaphone, Target, UserPlus,
+  Sparkles, Loader2, Mail,
   ShieldCheck, ShieldAlert, Shield
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const Marketing = () => {
-  const [campaigns, setCampaigns] = useState([]);
-  const [leads, setLeads] = useState([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isQualifying, setIsQualifying] = useState(false);
   const [showCampaignModal, setShowCampaignModal] = useState(false);
@@ -37,7 +37,7 @@ const Marketing = () => {
     fetchData();
   }, []);
 
-  const handleCreateCampaign = async (e: React.FormEvent) => {
+  const handleCreateCampaign = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       await createCampaign({ ...newCampaign, budget: parseFloat(newCampaign.budget as any) });
@@ -49,7 +49,7 @@ const Marketing = () => {
     }
   };
 
-  const handleCreateLead = async (e: React.FormEvent) => {
+  const handleCreateLead = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       await createLead({ ...newLead, campaign_id: parseInt(newLead.campaign_id as any) });

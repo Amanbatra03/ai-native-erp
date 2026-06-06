@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { getInventory, createInventoryItem, getSuppliers, createSupplier, getRestockSuggestions, executeRestock } from '../api';
 import { Package, Plus, Truck, AlertTriangle, BarChart3, Tag, ShoppingCart, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const Inventory = () => {
-  const [inventory, setInventory] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
-  const [suggestions, setSuggestions] = useState([]);
+  const [inventory, setInventory] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showItemModal, setShowItemModal] = useState(false);
   const [showSupplierModal, setShowSupplierModal] = useState(false);
   const [isRestocking, setIsRestocking] = useState(false);
@@ -51,7 +51,7 @@ const Inventory = () => {
     }
   }, [activeTab]);
 
-  const handleCreateItem = async (e: React.FormEvent) => {
+  const handleCreateItem = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       await createInventoryItem({
@@ -69,7 +69,7 @@ const Inventory = () => {
     }
   };
 
-  const handleCreateSupplier = async (e: React.FormEvent) => {
+  const handleCreateSupplier = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       await createSupplier(newSupplier);

@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { getLeaveRequests, createLeaveRequest, getEmployees, runLeaveAutomation } from '../api';
 import { Calendar, Plus, User, Clock, CheckCircle, XCircle, Bot, Loader2 } from 'lucide-react';
 
 const LeaveRequests = () => {
-  const [requests, setRequests] = useState([]);
-  const [employees, setEmployees] = useState([]);
+  const [requests, setRequests] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [isAutomating, setIsAutomating] = useState(false);
   const [newLeave, setNewLeave] = useState({
@@ -29,7 +29,7 @@ const LeaveRequests = () => {
     fetchData();
   }, []);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       await createLeaveRequest({
