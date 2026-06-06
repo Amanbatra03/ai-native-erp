@@ -84,12 +84,12 @@ class LeaveRequest(LeaveRequestBase):
     class Config:
         from_attributes = True
 
-# --- Finance Schemas (Phase 3) ---
+# --- Finance Schemas ---
 
 class TransactionBase(BaseModel):
     description: str
     amount: float
-    type: str # 'Income', 'Expense'
+    type: str
     category: str
     company_id: int
 
@@ -102,7 +102,7 @@ class Transaction(TransactionBase):
     class Config:
         from_attributes = True
 
-# --- Supply Chain Schemas (Phase 3) ---
+# --- Supply Chain Schemas ---
 
 class SupplierBase(BaseModel):
     name: str
@@ -135,7 +135,7 @@ class InventoryItem(InventoryItemBase):
     class Config:
         from_attributes = True
 
-# --- Marketing Schemas (Phase 4 / v3.0) ---
+# --- Marketing Schemas ---
 
 class LeadBase(BaseModel):
     name: str
@@ -168,16 +168,19 @@ class Campaign(CampaignBase):
     class Config:
         from_attributes = True
 
-# --- Auth & Misc ---
+# --- Auth & User Schemas ---
+
 class UserBase(BaseModel):
     email: EmailStr
     full_name: str
 
 class UserCreate(UserBase):
     password: str
+    role: Optional[str] = "readonly"
 
 class User(UserBase):
     id: int
+    role: str
     class Config:
         from_attributes = True
 
@@ -187,6 +190,22 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None
+
+# --- Audit Log Schema ---
+
+class AuditLogRead(BaseModel):
+    id: int
+    user_email: str
+    action: str
+    entity: str
+    entity_id: Optional[int] = None
+    details: Optional[str] = None
+    timestamp: datetime
+    ip_address: Optional[str] = None
+    class Config:
+        from_attributes = True
+
+# --- Misc ---
 
 class QueryRequest(BaseModel):
     query: str

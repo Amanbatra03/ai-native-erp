@@ -1,27 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getContacts, createContact, getCompanies } from '../api';
-import { Plus, Mail, Phone, Building2, X } from 'lucide-react';
+import { useLiveData } from '../hooks/useLiveData';
+import { Plus, Mail, Phone, Building2, X, Radio } from 'lucide-react';
 
-const inputCls = "w-full bg-[#111] border border-white/[0.08] focus:border-blue-500/60 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-700 outline-none transition-all duration-150";
-const labelCls = "block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider";
+const inputCls = "w-full bg-[var(--bg-input)] border border-[var(--border)] focus:border-blue-500/60 rounded-lg px-4 py-2.5 text-sm text-[var(--text-1)] placeholder-[var(--text-3)] outline-none transition-all duration-150";
+const labelCls = "block text-xs font-medium text-[var(--text-3)] mb-1.5 uppercase tracking-wider";
 
 const Contacts = () => {
-  const [contacts, setContacts] = useState<any[]>([]);
+  const { data: contacts, loading, lastUpdated } = useLiveData<any[]>(getContacts);
+  const list = contacts ?? [];
+
   const [companies, setCompanies] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [newContact, setNewContact] = useState({ first_name: '', last_name: '', email: '', phone: '', company_id: '' });
 
-  const fetchData = async () => {
-    try {
-      const [contactsRes, companiesRes] = await Promise.all([getContacts(), getCompanies()]);
-      setContacts(contactsRes.data);
-      setCompanies(companiesRes.data);
-    } catch (error) {
-      console.error('Error fetching contacts', error);
-    }
-  };
-
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    getCompanies().then((res) => setCompanies(res.data)).catch(() => {});
+  }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +24,6 @@ const Contacts = () => {
       await createContact({ ...newContact, company_id: newContact.company_id ? parseInt(newContact.company_id) : null });
       setShowModal(false);
       setNewContact({ first_name: '', last_name: '', email: '', phone: '', company_id: '' });
-      fetchData();
     } catch (error) {
       console.error('Error creating contact', error);
     }
@@ -39,8 +33,18 @@ const Contacts = () => {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Contacts</h1>
-          <p className="text-gray-600 text-xs mt-1">Your network of business professionals</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-1)]">Contacts</h1>
+            {!loading && (
+              <span className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                <Radio size={9} className="animate-pulse" />
+                Live
+              </span>
+            )}
+          </div>
+          <p className="text-[var(--text-3)] text-xs mt-1">
+            {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}` : 'Your network of business professionals'}
+          </p>
         </div>
         <button
           onClick={() => setShowModal(true)}
@@ -51,57 +55,67 @@ const Contacts = () => {
         </button>
       </div>
 
-      <div className="bg-[#0f0f0f] border border-white/[0.07] rounded-xl overflow-hidden">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl overflow-hidden">
         <table className="w-full text-left">
           <thead>
-            <tr className="border-b border-white/[0.06] bg-white/[0.02]">
-              <th className="px-6 py-3.5 text-[10px] font-semibold text-gray-600 uppercase tracking-widest">Name</th>
-              <th className="px-6 py-3.5 text-[10px] font-semibold text-gray-600 uppercase tracking-widest">Email</th>
-              <th className="px-6 py-3.5 text-[10px] font-semibold text-gray-600 uppercase tracking-widest">Phone</th>
-              <th className="px-6 py-3.5 text-[10px] font-semibold text-gray-600 uppercase tracking-widest">Company</th>
+            <tr className="border-b border-[var(--border)] bg-white/[0.02]">
+              <th className="px-6 py-3.5 text-[10px] font-semibold text-[var(--text-3)] uppercase tracking-widest">Name</th>
+              <th className="px-6 py-3.5 text-[10px] font-semibold text-[var(--text-3)] uppercase tracking-widest">Email</th>
+              <th className="px-6 py-3.5 text-[10px] font-semibold text-[var(--text-3)] uppercase tracking-widest">Phone</th>
+              <th className="px-6 py-3.5 text-[10px] font-semibold text-[var(--text-3)] uppercase tracking-widest">Company</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.04]">
-            {contacts.map((contact: any) => (
-              <tr key={contact.id} className="hover:bg-white/[0.02] transition-colors duration-100">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-600/15 text-blue-400 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
-                      {contact.first_name[0]}{contact.last_name[0]}
-                    </div>
-                    <span className="text-sm font-medium text-white">{contact.first_name} {contact.last_name}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-gray-500 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Mail size={13} className="text-gray-700 shrink-0" />
-                    {contact.email}
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-gray-500 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Phone size={13} className="text-gray-700 shrink-0" />
-                    {contact.phone || '—'}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex items-center gap-1.5 bg-white/[0.04] text-gray-500 border border-white/[0.06] px-2.5 py-1 rounded-full text-xs">
-                    <Building2 size={11} />
-                    {companies.find((c: any) => c.id === contact.company_id)?.name || 'Individual'}
-                  </span>
-                </td>
-              </tr>
-            ))}
+          <tbody className="divide-y divide-[var(--border)]">
+            {loading
+              ? Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}>
+                    {[180, 200, 120, 140].map((w, j) => (
+                      <td key={j} className="px-6 py-4">
+                        <div className={`skeleton h-3 rounded`} style={{ width: w }} />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              : list.map((contact: any) => (
+                  <tr key={contact.id} className="hover:bg-white/[0.02] transition-colors duration-100">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-blue-600/15 text-blue-400 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
+                          {contact.first_name[0]}{contact.last_name[0]}
+                        </div>
+                        <span className="text-sm font-medium text-[var(--text-1)]">{contact.first_name} {contact.last_name}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-[var(--text-2)] text-sm">
+                      <div className="flex items-center gap-2">
+                        <Mail size={13} className="text-[var(--text-3)] shrink-0" />
+                        {contact.email}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-[var(--text-2)] text-sm">
+                      <div className="flex items-center gap-2">
+                        <Phone size={13} className="text-[var(--text-3)] shrink-0" />
+                        {contact.phone || '—'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center gap-1.5 bg-white/[0.04] text-[var(--text-3)] border border-[var(--border)] px-2.5 py-1 rounded-full text-xs">
+                        <Building2 size={11} />
+                        {companies.find((c: any) => c.id === contact.company_id)?.name || 'Individual'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
           </tbody>
         </table>
       </div>
 
       {showModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="bg-[#0f0f0f] border border-white/[0.09] p-7 rounded-2xl w-full max-w-md shadow-2xl">
+          <div className="bg-[var(--bg-surface)] border border-[var(--border)] p-7 rounded-2xl w-full max-w-md shadow-2xl">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-semibold tracking-tight">Add Contact</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-600 hover:text-gray-300 transition-colors p-1 rounded-lg">
+              <h2 className="text-lg font-semibold tracking-tight text-[var(--text-1)]">Add Contact</h2>
+              <button onClick={() => setShowModal(false)} className="text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors p-1 rounded-lg">
                 <X size={18} />
               </button>
             </div>
@@ -145,7 +159,7 @@ const Contacts = () => {
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)}
-                  className="flex-1 bg-white/[0.05] hover:bg-white/[0.09] text-gray-300 text-sm py-2.5 rounded-lg transition-all duration-150 font-medium">
+                  className="flex-1 bg-white/[0.05] hover:bg-white/[0.09] text-[var(--text-2)] text-sm py-2.5 rounded-lg transition-all duration-150 font-medium">
                   Cancel
                 </button>
                 <button type="submit"

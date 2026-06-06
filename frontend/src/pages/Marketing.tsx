@@ -1,40 +1,34 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { getCampaigns, createCampaign, getLeads, createLead, runLeadQualification } from '../api';
-import {
-  Megaphone, Target, UserPlus,
-  Sparkles, Loader2, Mail,
-  ShieldCheck, ShieldAlert, Shield
-} from 'lucide-react';
+import { useLiveData } from '../hooks/useLiveData';
+import { Megaphone, Target, UserPlus, Sparkles, Loader2, Mail, ShieldCheck, ShieldAlert, Shield, Radio, X } from 'lucide-react';
 import { clsx } from 'clsx';
 
+const inputCls = "w-full bg-[var(--bg-input)] border border-[var(--border)] focus:border-blue-500/60 rounded-lg px-4 py-2.5 text-sm text-[var(--text-1)] placeholder-[var(--text-3)] outline-none transition-all duration-150";
+const labelCls = "block text-xs font-medium text-[var(--text-3)] mb-1.5 uppercase tracking-wider";
+
+const PriorityIcon = ({ priority }: { priority: string }) => {
+  if (priority === 'Hot') return <ShieldCheck className="text-red-400" size={14} />;
+  if (priority === 'Warm') return <Shield className="text-amber-400" size={14} />;
+  return <ShieldAlert className="text-blue-400" size={14} />;
+};
+
 const Marketing = () => {
+  const { data: leads, loading: leadsLoading, lastUpdated } = useLiveData<any[]>(getLeads);
+  const leadList = leads ?? [];
+
   const [campaigns, setCampaigns] = useState<any[]>([]);
-  const [leads, setLeads] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isQualifying, setIsQualifying] = useState(false);
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [showLeadModal, setShowLeadModal] = useState(false);
-
   const [newCampaign, setNewCampaign] = useState({ name: '', budget: 0 });
   const [newLead, setNewLead] = useState({ name: '', email: '', source: '', campaign_id: '' });
 
-  const fetchData = async () => {
-    try {
-      const [campRes, leadRes] = await Promise.all([getCampaigns(), getLeads()]);
-      setCampaigns(campRes.data);
-      setLeads(leadRes.data);
-      if (campRes.data.length > 0 && !newLead.campaign_id) {
-        setNewLead(prev => ({ ...prev, campaign_id: campRes.data[0].id }));
-      }
-    } catch (error) {
-      console.error("Error fetching data", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchData();
+    getCampaigns().then((res) => {
+      setCampaigns(res.data);
+      if (res.data.length > 0) setNewLead(prev => ({ ...prev, campaign_id: res.data[0].id }));
+    }).catch(() => {});
   }, []);
 
   const handleCreateCampaign = async (e: FormEvent<HTMLFormElement>) => {
@@ -43,10 +37,7 @@ const Marketing = () => {
       await createCampaign({ ...newCampaign, budget: parseFloat(newCampaign.budget as any) });
       setShowCampaignModal(false);
       setNewCampaign({ name: '', budget: 0 });
-      fetchData();
-    } catch (error) {
-      console.error("Error creating campaign", error);
-    }
+    } catch { console.error('Error creating campaign'); }
   };
 
   const handleCreateLead = async (e: FormEvent<HTMLFormElement>) => {
@@ -55,182 +46,143 @@ const Marketing = () => {
       await createLead({ ...newLead, campaign_id: parseInt(newLead.campaign_id as any) });
       setShowLeadModal(false);
       setNewLead({ name: '', email: '', source: '', campaign_id: campaigns[0]?.id || '' });
-      fetchData();
-    } catch (error) {
-      console.error("Error creating lead", error);
-    }
+    } catch { console.error('Error creating lead'); }
   };
 
   const handleQualifyLeads = async () => {
     setIsQualifying(true);
-    try {
-      await runLeadQualification();
-      await fetchData();
-      alert("AI Lead Qualification completed!");
-    } catch (error) {
-      console.error("Error qualifying leads", error);
-    } finally {
-      setIsQualifying(false);
-    }
+    try { await runLeadQualification(); } catch { /* silent */ } finally { setIsQualifying(false); }
   };
-
-  const PriorityIcon = ({ priority }: { priority: string }) => {
-    switch (priority) {
-      case 'Hot': return <ShieldCheck className="text-red-400" size={16} />;
-      case 'Warm': return <Shield className="text-orange-400" size={16} />;
-      default: return <ShieldAlert className="text-blue-400" size={16} />;
-    }
-  };
-
-  if (loading) return <div className="p-8 flex items-center justify-center h-full"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Marketing Intelligence</h1>
-          <p className="text-gray-400">Manage campaigns and AI-qualified leads</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-1)]">Marketing</h1>
+            {!leadsLoading && (
+              <span className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                <Radio size={9} className="animate-pulse" />
+                Live
+              </span>
+            )}
+          </div>
+          <p className="text-[var(--text-3)] text-xs mt-1">
+            {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}` : 'Manage campaigns and AI-qualified leads'}
+          </p>
         </div>
-        <div className="flex gap-4">
-          <button
-            onClick={handleQualifyLeads}
-            disabled={isQualifying}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50"
-          >
-            {isQualifying ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-            AI Qualify Leads
+        <div className="flex gap-2">
+          <button onClick={handleQualifyLeads} disabled={isQualifying}
+            className="flex items-center gap-2 bg-violet-600/90 hover:bg-violet-600 disabled:opacity-50 text-white text-sm px-3 py-2 rounded-lg font-medium transition-all duration-150">
+            {isQualifying ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+            AI Qualify
           </button>
-          <button
-            onClick={() => setShowCampaignModal(true)}
-            className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors border border-gray-700"
-          >
-            <Megaphone size={18} />
-            New Campaign
+          <button onClick={() => setShowCampaignModal(true)}
+            className="flex items-center gap-2 bg-[var(--bg-surface)] border border-[var(--border)] hover:border-white/20 text-[var(--text-2)] text-sm px-3 py-2 rounded-lg transition-all duration-150">
+            <Megaphone size={14} />New Campaign
           </button>
-          <button
-            onClick={() => setShowLeadModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-          >
-            <UserPlus size={18} />
-            Add Lead
+          <button onClick={() => setShowLeadModal(true)}
+            className="bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-all duration-150 shadow-[0_1px_4px_rgba(37,99,235,0.3)]">
+            <UserPlus size={14} />Add Lead
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Campaigns Sidebar */}
-        <div className="lg:col-span-1 space-y-4">
-          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Active Campaigns</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Campaigns sidebar */}
+        <div className="lg:col-span-1 space-y-3">
+          <p className="text-[10px] font-semibold text-[var(--text-3)] uppercase tracking-widest mb-3">Campaigns</p>
           {campaigns.map((camp: any) => (
-            <div key={camp.id} className="bg-gray-900 border border-gray-800 p-4 rounded-xl">
+            <div key={camp.id} className="bg-[var(--bg-surface)] border border-[var(--border)] p-4 rounded-xl">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold">{camp.name}</h3>
-                <span className="text-[10px] bg-green-900/30 text-green-400 px-2 py-0.5 rounded-full font-bold uppercase">{camp.status}</span>
+                <h3 className="font-semibold text-sm text-[var(--text-1)]">{camp.name}</h3>
+                <span className="text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded-full font-semibold uppercase">{camp.status}</span>
               </div>
-              <div className="flex justify-between text-xs text-gray-400">
-                <span>Budget: ${camp.budget.toLocaleString()}</span>
-                <span>{camp.leads?.length || 0} Leads</span>
+              <div className="flex justify-between text-xs text-[var(--text-3)]">
+                <span>${camp.budget.toLocaleString()}</span>
+                <span>{camp.leads?.length ?? 0} leads</span>
               </div>
             </div>
           ))}
-          {campaigns.length === 0 && <p className="text-gray-600 text-sm italic text-center py-4">No campaigns found.</p>}
+          {campaigns.length === 0 && <p className="text-[var(--text-3)] text-xs italic text-center py-4">No campaigns yet</p>}
         </div>
 
-        {/* Leads Table */}
+        {/* Leads table */}
         <div className="lg:col-span-3">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+          <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl overflow-hidden">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-gray-800 bg-gray-800/50">
-                  <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-gray-500">Lead Info</th>
-                  <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-gray-500">Source</th>
-                  <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-gray-500">AI Score</th>
-                  <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-gray-500">Priority</th>
-                  <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-gray-500">Status</th>
+                <tr className="border-b border-[var(--border)] bg-white/[0.02]">
+                  {['Lead', 'Source', 'AI Score', 'Priority', 'Status'].map((h) => (
+                    <th key={h} className="px-5 py-3.5 text-[10px] font-semibold text-[var(--text-3)] uppercase tracking-widest">{h}</th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800">
-                {leads.map((lead: any) => (
-                  <tr key={lead.id} className="hover:bg-gray-800/30 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-gray-100">{lead.name}</span>
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
-                          <Mail size={10} /> {lead.email}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-400">{lead.source}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-full max-w-[60px] bg-gray-800 h-1.5 rounded-full overflow-hidden">
-                          <div 
-                            className={clsx(
-                              "h-full rounded-full transition-all duration-1000",
-                              lead.ai_score > 70 ? "bg-red-500" : lead.ai_score > 40 ? "bg-orange-500" : "bg-blue-500"
-                            )}
-                            style={{ width: `${lead.ai_score}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-bold">{lead.ai_score}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className={clsx(
-                        "flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-lg w-fit",
-                        lead.priority === 'Hot' ? "bg-red-900/20 text-red-400" : 
-                        lead.priority === 'Warm' ? "bg-orange-900/20 text-orange-400" : "bg-blue-900/20 text-blue-400"
-                      )}>
-                        <PriorityIcon priority={lead.priority} />
-                        {lead.priority}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={clsx(
-                        "text-[10px] px-2 py-0.5 rounded-full font-bold uppercase",
-                        lead.status === 'Qualified' ? "bg-green-900/30 text-green-400" : "bg-gray-800 text-gray-500"
-                      )}>
-                        {lead.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+              <tbody className="divide-y divide-[var(--border)]">
+                {leadsLoading
+                  ? Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i}>
+                        {[160, 100, 80, 70, 80].map((w, j) => (
+                          <td key={j} className="px-5 py-3.5"><div className="skeleton h-3 rounded" style={{ width: w }} /></td>
+                        ))}
+                      </tr>
+                    ))
+                  : leadList.map((lead: any) => (
+                      <tr key={lead.id} className="hover:bg-white/[0.02] transition-colors duration-100">
+                        <td className="px-5 py-3.5">
+                          <p className="text-sm font-medium text-[var(--text-1)]">{lead.name}</p>
+                          <p className="text-xs text-[var(--text-3)] flex items-center gap-1"><Mail size={10} />{lead.email}</p>
+                        </td>
+                        <td className="px-5 py-3.5 text-xs text-[var(--text-3)]">{lead.source}</td>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-12 bg-[var(--bg-input)] h-1.5 rounded-full overflow-hidden">
+                              <div className={clsx('h-full rounded-full transition-all duration-700',
+                                lead.ai_score > 70 ? 'bg-red-500' : lead.ai_score > 40 ? 'bg-amber-500' : 'bg-blue-500'
+                              )} style={{ width: `${lead.ai_score}%` }} />
+                            </div>
+                            <span className="text-xs font-bold text-[var(--text-2)] num">{lead.ai_score}</span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <div className={clsx(
+                            'flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-lg w-fit',
+                            lead.priority === 'Hot' ? 'bg-red-500/10 text-red-400' :
+                            lead.priority === 'Warm' ? 'bg-amber-500/10 text-amber-400' : 'bg-blue-500/10 text-blue-400'
+                          )}>
+                            <PriorityIcon priority={lead.priority} />
+                            {lead.priority}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className={clsx('text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase',
+                            lead.status === 'Qualified' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/[0.05] text-[var(--text-3)]'
+                          )}>{lead.status}</span>
+                        </td>
+                      </tr>
+                    ))}
+                {!leadsLoading && leadList.length === 0 && (
+                  <tr><td colSpan={5} className="px-5 py-12 text-center text-[var(--text-3)] text-sm italic">No leads yet. Add a lead or launch a campaign.</td></tr>
+                )}
               </tbody>
             </table>
-            {leads.length === 0 && (
-              <div className="p-12 text-center text-gray-600 italic">
-                No leads available. Start by adding a lead or launching a campaign.
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-      {/* Modals */}
       {showCampaignModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-900 border border-gray-800 p-8 rounded-2xl w-full max-w-md shadow-2xl">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><Megaphone className="text-blue-500" /> New Campaign</h2>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="bg-[var(--bg-surface)] border border-[var(--border)] p-7 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-semibold tracking-tight text-[var(--text-1)] flex items-center gap-2"><Megaphone size={18} />New Campaign</h2>
+              <button onClick={() => setShowCampaignModal(false)} className="text-[var(--text-3)] hover:text-[var(--text-1)] p-1 rounded-lg"><X size={18} /></button>
+            </div>
             <form onSubmit={handleCreateCampaign} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Campaign Name</label>
-                <input
-                  type="text" required value={newCampaign.name}
-                  onChange={e => setNewCampaign({ ...newCampaign, name: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Budget</label>
-                <input
-                  type="number" required value={newCampaign.budget}
-                  onChange={e => setNewCampaign({ ...newCampaign, budget: e.target.value as any })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div className="flex gap-4 mt-8">
-                <button type="button" onClick={() => setShowCampaignModal(false)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors">Cancel</button>
-                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors">Launch</button>
+              <div><label className={labelCls}>Campaign Name</label><input type="text" required value={newCampaign.name} onChange={e => setNewCampaign({ ...newCampaign, name: e.target.value })} className={inputCls} /></div>
+              <div><label className={labelCls}>Budget</label><input type="number" required value={newCampaign.budget} onChange={e => setNewCampaign({ ...newCampaign, budget: e.target.value as any })} className={inputCls} /></div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowCampaignModal(false)} className="flex-1 bg-white/[0.05] hover:bg-white/[0.09] text-[var(--text-2)] text-sm py-2.5 rounded-lg font-medium transition-all duration-150">Cancel</button>
+                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm py-2.5 rounded-lg font-medium transition-all duration-150 shadow-[0_1px_4px_rgba(37,99,235,0.3)]">Launch</button>
               </div>
             </form>
           </div>
@@ -238,49 +190,25 @@ const Marketing = () => {
       )}
 
       {showLeadModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-900 border border-gray-800 p-8 rounded-2xl w-full max-w-md shadow-2xl">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><Target className="text-blue-500" /> Add New Lead</h2>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="bg-[var(--bg-surface)] border border-[var(--border)] p-7 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-semibold tracking-tight text-[var(--text-1)] flex items-center gap-2"><Target size={18} />Add Lead</h2>
+              <button onClick={() => setShowLeadModal(false)} className="text-[var(--text-3)] hover:text-[var(--text-1)] p-1 rounded-lg"><X size={18} /></button>
+            </div>
             <form onSubmit={handleCreateLead} className="space-y-4">
+              <div><label className={labelCls}>Full Name</label><input type="text" required value={newLead.name} onChange={e => setNewLead({ ...newLead, name: e.target.value })} className={inputCls} /></div>
+              <div><label className={labelCls}>Email</label><input type="email" required value={newLead.email} onChange={e => setNewLead({ ...newLead, email: e.target.value })} className={inputCls} /></div>
+              <div><label className={labelCls}>Source</label><input type="text" required placeholder="LinkedIn, Referral…" value={newLead.source} onChange={e => setNewLead({ ...newLead, source: e.target.value })} className={inputCls} /></div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Full Name</label>
-                <input
-                  type="text" required value={newLead.name}
-                  onChange={e => setNewLead({ ...newLead, name: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
-                <input
-                  type="email" required value={newLead.email}
-                  onChange={e => setNewLead({ ...newLead, email: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Lead Source</label>
-                <input
-                  type="text" required value={newLead.source} placeholder="e.g. LinkedIn, Referral, Web"
-                  onChange={e => setNewLead({ ...newLead, source: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Campaign</label>
-                <select
-                  required value={newLead.campaign_id}
-                  onChange={e => setNewLead({ ...newLead, campaign_id: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                >
-                  {campaigns.map((camp: any) => (
-                    <option key={camp.id} value={camp.id}>{camp.name}</option>
-                  ))}
+                <label className={labelCls}>Campaign</label>
+                <select required value={newLead.campaign_id} onChange={e => setNewLead({ ...newLead, campaign_id: e.target.value })} className={inputCls}>
+                  {campaigns.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
-              <div className="flex gap-4 mt-8">
-                <button type="button" onClick={() => setShowLeadModal(false)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors">Cancel</button>
-                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors">Add</button>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowLeadModal(false)} className="flex-1 bg-white/[0.05] hover:bg-white/[0.09] text-[var(--text-2)] text-sm py-2.5 rounded-lg font-medium transition-all duration-150">Cancel</button>
+                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm py-2.5 rounded-lg font-medium transition-all duration-150 shadow-[0_1px_4px_rgba(37,99,235,0.3)]">Add</button>
               </div>
             </form>
           </div>
