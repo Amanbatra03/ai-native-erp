@@ -14,7 +14,7 @@ const ACTION_COLORS: Record<string, string> = {
 export default function AuditLog() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ entity: '', user_email: '', action: '' });
+  const [filters, setFilters] = useState({ entity: '', user: '', action: '' });
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -85,8 +85,8 @@ export default function AuditLog() {
         />
         <input
           placeholder="User email"
-          value={filters.user_email}
-          onChange={(e) => setFilters({ ...filters, user_email: e.target.value })}
+          value={filters.user}
+          onChange={(e) => setFilters({ ...filters, user: e.target.value })}
           className={inputCls}
         />
         <select

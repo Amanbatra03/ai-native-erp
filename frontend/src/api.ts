@@ -32,7 +32,7 @@ export const apiRegister = (data: { email: string; password: string; full_name: 
 
 export const apiGetMe = () => api.get('/auth/me');
 
-export const getAuditLogs = (params?: { entity?: string; user_email?: string; action?: string }) =>
+export const getAuditLogs = (params?: { entity?: string; user?: string; action?: string }) =>
   api.get('/audit-logs', { params });
 
 // --- CRM ---
