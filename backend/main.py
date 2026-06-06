@@ -13,6 +13,18 @@ from auth import (
 
 models.Base.metadata.create_all(bind=engine)
 
+# ─── Startup migrations (safe to run on every start) ─────────────────────────
+def _run_migrations():
+    with engine.connect() as conn:
+        from sqlalchemy import text, inspect
+        inspector = inspect(engine)
+        user_cols = [c["name"] for c in inspector.get_columns("users")]
+        if "role" not in user_cols:
+            conn.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR DEFAULT 'readonly'"))
+            conn.commit()
+
+_run_migrations()
+
 app = FastAPI(title="AI-Native ERP v4.0")
 
 ALLOWED_ORIGINS = os.getenv(
