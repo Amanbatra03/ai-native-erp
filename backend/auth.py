@@ -1,7 +1,7 @@
 import os
 import datetime
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -12,16 +12,15 @@ SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production-use-a-long-random-
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8-hour session
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
 def create_access_token(data: dict) -> str:
@@ -55,7 +54,6 @@ def get_current_user(
 
 
 def role_required(*roles: str):
-    """Returns a FastAPI dependency that enforces role membership."""
     def dependency(current_user: models.User = Depends(get_current_user)):
         if current_user.role not in roles:
             raise HTTPException(

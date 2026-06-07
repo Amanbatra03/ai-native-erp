@@ -14,19 +14,18 @@ from auth import (
 
 
 def _run_migrations():
-    with engine.connect() as conn:
-        from sqlalchemy import text, inspect
-        inspector = inspect(engine)
+    from sqlalchemy import text, inspect
+    with engine.begin() as conn:
+        inspector = inspect(conn)
         user_cols = [c["name"] for c in inspector.get_columns("users")]
         if "role" not in user_cols:
             conn.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR DEFAULT 'readonly'"))
-            conn.commit()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        models.Base.metadata.create_all(bind=engine)
+        models.Base.metadata.create_all(engine)
         _run_migrations()
         print("[STARTUP] Database initialized successfully")
     except Exception as exc:
