@@ -12,10 +12,19 @@ SQLALCHEMY_DATABASE_URL = _db_url
 
 _is_sqlite = "sqlite" in SQLALCHEMY_DATABASE_URL
 
+if _is_sqlite:
+    _connect_args = {"check_same_thread": False}
+else:
+    _connect_args = {
+        "connect_timeout": 10,
+        "sslmode": "require",
+    }
+
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False} if _is_sqlite else {"connect_timeout": 5},
-    pool_timeout=10,
+    connect_args=_connect_args,
+    pool_timeout=15,
+    pool_pre_ping=True,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
