@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
@@ -22,20 +21,11 @@ def _run_migrations():
             conn.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR DEFAULT 'readonly'"))
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    try:
-        models.Base.metadata.create_all(engine)
-        _run_migrations()
-        print("[STARTUP] Database initialized successfully")
-    except Exception as exc:
-        import traceback
-        print(f"[STARTUP ERROR] Database initialization failed: {exc}")
-        traceback.print_exc()
-    yield
+# Run at module load — if this crashes, Render logs show the real error
+models.Base.metadata.create_all(engine)
+_run_migrations()
 
-
-app = FastAPI(title="AI-Native ERP v4.0", lifespan=lifespan)
+app = FastAPI(title="AI-Native ERP v4.0")
 
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
@@ -79,6 +69,15 @@ def log_action(
 @app.get("/")
 def read_root():
     return {"message": "AI-Native ERP API v4.0"}
+
+
+@app.get("/health")
+def health_check(db: Session = Depends(get_db)):
+    try:
+        user_count = db.query(models.User).count()
+        return {"status": "ok", "users": user_count, "db": "sqlite"}
+    except Exception as exc:
+        return {"status": "error", "error": str(exc)}
 
 
 # ─── Auth Endpoints ───────────────────────────────────────────────────────────
