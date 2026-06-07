@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
@@ -11,9 +12,7 @@ from auth import (
     get_current_user, role_required,
 )
 
-models.Base.metadata.create_all(bind=engine)
 
-# ─── Startup migrations (safe to run on every start) ─────────────────────────
 def _run_migrations():
     with engine.connect() as conn:
         from sqlalchemy import text, inspect
@@ -23,9 +22,21 @@ def _run_migrations():
             conn.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR DEFAULT 'readonly'"))
             conn.commit()
 
-_run_migrations()
 
-app = FastAPI(title="AI-Native ERP v4.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        models.Base.metadata.create_all(bind=engine)
+        _run_migrations()
+        print("[STARTUP] Database initialized successfully")
+    except Exception as exc:
+        import traceback
+        print(f"[STARTUP ERROR] Database initialization failed: {exc}")
+        traceback.print_exc()
+    yield
+
+
+app = FastAPI(title="AI-Native ERP v4.0", lifespan=lifespan)
 
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
